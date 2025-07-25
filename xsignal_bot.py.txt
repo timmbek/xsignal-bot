@@ -1,0 +1,60 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+import logging
+
+# 🔐 Bot token va yangi kanal username
+BOT_TOKEN = "7993594610:AAHNqaJI1-PJZKKXGuNLxte_NApWNIcjMLI"
+CHANNEL_USERNAME = "@xsingalteam"
+
+# 🎥 Video havola — o'zgartirishingiz mumkin
+VIDEO_LINK = "https://t.me/your_channel_or_drive/video_link"
+
+# 📋 Logging sozlamasi
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+
+# /start komandasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("✅ Obuna bo‘ldim", callback_data="check_subscription")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        f"Assalomu alaykum, {update.effective_user.first_name}!\n\n"
+        "📚 *Zona to‘liq strategiyasi* videosini olish uchun quyidagi kanalga obuna bo‘ling:\n"
+        f"➡️ {CHANNEL_USERNAME}\n\n"
+        "Obuna bo‘lganingizdan so‘ng pastdagi tugmani bosing 👇",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
+
+# Obuna tekshirish
+async def check_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = query.from_user.id
+
+    member = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
+
+    if member.status in ["member", "creator", "administrator"]:
+        await query.edit_message_text(
+            f"✅ Obuna tasdiqlandi!\n\n🎥 Mana sizga *zona to‘liq strategiyasi* videosi:\n{VIDEO_LINK}",
+            parse_mode="Markdown"
+        )
+    else:
+        await query.edit_message_text(
+            "❗ Siz hali kanalga obuna bo‘lmagansiz.\n\n"
+            f"Iltimos, {CHANNEL_USERNAME} kanaliga obuna bo‘ling va yana urinib ko‘ring.",
+            parse_mode="Markdown"
+        )
+
+# Ishga tushirish
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(check_subscription, pattern="check_subscription"))
+
+    print("🤖 Bot ishga tushdi...")
+    app.run_polling()
